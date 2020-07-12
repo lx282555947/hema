@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Login from '../components/Login'
+import Golabal from '../assets/css/golabal.css'
 
 Vue.use(VueRouter)
 
