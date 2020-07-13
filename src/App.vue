@@ -7,11 +7,12 @@
 <script>
 
 export default {
-    name: 'app'
+  name: 'app'
 }
 </script>
 
 <style>
+    @import url('./assets/css/golabal.css');
     #app {
     }
 </style>
