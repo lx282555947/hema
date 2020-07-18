@@ -4,9 +4,16 @@ import router from './router'
 import store from './store'
 import './plugins/element.js'
 import axios from 'axios'
+import { Message } from 'element-ui';
 
+axios.interceptors.request.use(config=>{
+  console.log('拦截器config：',config)
+
+  return config;
+})
 Vue.config.productionTip = false
 Vue.prototype.$http = axios
+Vue.prototype.$message = Message
 
 new Vue({
   router,
