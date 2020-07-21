@@ -7,8 +7,8 @@ import axios from 'axios'
 import { Message } from 'element-ui';
 
 axios.interceptors.request.use(config=>{
+  config.headers.Authorization = window.sessionStorage.getItem('token')
   console.log('拦截器config：',config)
-
   return config;
 })
 Vue.config.productionTip = false
