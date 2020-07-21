@@ -114,7 +114,7 @@
       const checkPhone = (rule, value, callback) => {
         const phoneReg = /^[1][3,4,5,7,8][0-9]{9}$/
         if (!phoneReg.test(value)) {
-          return callback(new Error('请输入合法的电话'))
+          return callback(new Error('请输入合法的手机号'))
         }
         callback()
       }
