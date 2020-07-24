@@ -4,7 +4,7 @@
         <el-breadcrumb separator-class="el-icon-arrow-right">
             <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
             <el-breadcrumb-item>用户管理</el-breadcrumb-item>
-            <el-breadcrumb-item>活动详情</el-breadcrumb-item>
+            <el-breadcrumb-item>用户列表</el-breadcrumb-item>
         </el-breadcrumb>
         <!--    卡片视图区-->
         <el-card>
@@ -56,8 +56,9 @@
                 </el-table-column>
                 <el-table-column label="操作" width="180px">
                     <template slot-scope="slope">
-                        <el-button type="primary" icon="el-icon-edit" size="small"></el-button>
-                        <el-button type="danger" icon="el-icon-delete" size="small"></el-button>
+                        <el-button type="primary" icon="el-icon-edit" size="small"
+                                   @click="loadingUserInfo(slope.row)"></el-button>
+                        <el-button type="danger" icon="el-icon-delete" size="small" @click="deleteUserById(slope.row.id)"></el-button>
                         <el-tooltip effect="dark" content="分配角色" placement="top" :enterable="false">
                             <el-button type="warning" icon="el-icon-setting" size="small"></el-button>
                         </el-tooltip>
@@ -75,8 +76,8 @@
                     :total="totalpage">
             </el-pagination>
         </el-card>
-        <el-dialog title="添加用户" :visible.sync="addUserDialog" width="50%">
-            <el-form :model="addUserForm" :rules="addUserFormRules" label-width="100px">
+        <el-dialog title="添加用户" :visible.sync="addUserDialog" width="50%" @close="closeUserDialog">
+            <el-form :model="addUserForm" :rules="addUserFormRules" label-width="100px" ref="addUserForm">
                 <el-form-item label="用户名" prop="username">
                     <el-input v-model="addUserForm.username"></el-input>
                 </el-form-item>
@@ -92,7 +93,25 @@
             </el-form>
             <span slot="footer" class="dialog-footer">
                 <el-button @click="addUserDialog = false">取 消</el-button>
-                <el-button type="primary" @click="addUserDialog = false">确 定</el-button>
+                <el-button type="primary" @click="addUser">确 定</el-button>
+            </span>
+        </el-dialog>
+
+        <el-dialog title="编辑用户" :visible.sync="editUserDialog" width="50%" @close="closeEditUserDialog">
+            <el-form :model="editUserForm" :rules="editUserFormRules" label-width="100px" ref="editUserForm">
+                <el-form-item label="用户名" prop="username">
+                    <el-input v-model="editUserForm.username" disabled></el-input>
+                </el-form-item>
+                <el-form-item label="邮箱" prop="email">
+                    <el-input v-model="editUserForm.email"></el-input>
+                </el-form-item>
+                <el-form-item label="手机" prop="mobile">
+                    <el-input v-model="editUserForm.mobile"></el-input>
+                </el-form-item>
+            </el-form>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="editUserDialog = false">取 消</el-button>
+                <el-button type="primary" @click="editUser">确 定</el-button>
             </span>
         </el-dialog>
     </div>
@@ -127,9 +146,16 @@
         totalpage: 0,
         users: [],
         addUserDialog: false,
+        editUserDialog: false,
         addUserForm: {
           username: '',
           password: '',
+          email: '',
+          mobile: ''
+        },
+        editUserForm: {
+          id: '',
+          username: '',
           email: '',
           mobile: ''
         },
@@ -147,6 +173,43 @@
               trigger: 'blur'
             }
           ],
+          password: [
+            {
+              required: true,
+              message: '请输入密码',
+              trigger: 'blur'
+            },
+            {
+              min: 3,
+              max: 5,
+              message: '长度在 3 到 5 个字符',
+              trigger: 'blur'
+            }
+          ],
+          email: [
+            {
+              required: true,
+              message: '请输入邮箱',
+              trigger: 'blur'
+            },
+            {
+              validator: checkEmail,
+              trigger: 'blur'
+            }
+          ],
+          mobile: [
+            {
+              required: true,
+              message: '请输入手机号',
+              trigger: 'blur'
+            },
+            {
+              validator: checkPhone,
+              trigger: 'blur'
+            }
+          ]
+        },
+        editUserFormRules: {
           password: [
             {
               required: true,
@@ -233,6 +296,80 @@
       },
       reset () {
         this.getUserList()
+      },
+      closeUserDialog () {
+        console.log('关闭窗口')
+        this.$refs.addUserForm.resetFields()
+      },
+      addUser () {
+        this.$refs.addUserForm.validate(valid => {
+          console.log(valid)
+          if (!valid) {
+            return
+          }
+          this.$http.post('/api/users', this.addUserForm)
+            .then(res => {
+              console.log(res.data)
+              if (res.data.meta.status !== 201) {
+                return
+              }
+              console.log('添加用户成功')
+              this.$message.success('添加成功')
+              this.addUserDialog = false
+              this.getUserList()
+            })
+        })
+      },
+      loadingUserInfo (userInfo) {
+        this.$http.get(`/api/users/${userInfo.id}`)
+          .then(res => {
+            if (res.data.meta.status !== 200) {
+              return this.$message('查询用户失败')
+            }
+            this.editUserForm = res.data.data
+            this.editUserDialog = true
+          })
+      },
+      closeEditUserDialog () {
+        // this.$refs.editUserForm.resetFields()
+      },
+      editUser (id) {
+        this.$refs.editUserForm.validate(valid => {
+          console.log(valid)
+          if (!valid) {
+            return
+          }
+          console.log()
+          this.$http.put(`/api/users/${this.editUserForm.id}`, {
+            email: this.editUserForm.email,
+            mobile: this.editUserForm.mobile
+          })
+            .then(res => {
+              console.log('editUser参数为：', res.data.data)
+              if (res.data.meta.status !== 200) {
+                return this.$message.error('更新用户失败')
+              }
+              this.editUserDialog = false
+              this.getUserList()
+            })
+        })
+      },
+      deleteUserById(id){
+        this.$confirm('此操作将永久删除用户, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          return this.$http.delete(`/api/users/${id}`)
+        }).then(res=>{
+          if (res.data.meta.status !== 200) {
+            return this.$message.error('删除失败')
+          }
+          this.$message.success('删除成功')
+          this.getUserList()
+        }).catch(() => {
+          // this.$message.error('删除失败')
+        });
       }
     }
   }
