@@ -70,13 +70,16 @@
           this.$http.post('/api/login', this.form)
             .then(res => {
               console.log('接口调用结束', res)
-              console.log(res.data)
-              let { data, meta } = res.data
-              if (meta.status != 200) {
-                console.log(meta.msg)
+              let { data,meta } = res.data
+              // console.log(status)
+              if (meta.status !== 200) {
+                console.log('接口调用失败')
+                this.$message.error('登录失败')
                 return
               }
-              console.log('登陆成功')
+              this.$message.success('登录成功')
+              window.sessionStorage.setItem('token', data.token)
+              this.$router.push('/home')
             })
 
         })
