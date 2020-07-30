@@ -25,11 +25,22 @@
                             <el-row :class = "['bottom',index==0? 'top':'']"  v-for="(roleItem,index) in slope.row.children" :key="roleItem.id">
 <!--                                第一列，一级权限-->
                                 <el-col :span="5">
-                                    <el-tag class="role-tag">{{roleItem.authName}}</el-tag>
+                                    <el-tag class="role-tag" closable @close="removeRightById(slope.row,roleItem.id)">{{roleItem.authName}}</el-tag>
+                                    <i class="el-icon-caret-right"></i>
                                 </el-col>
 <!--                                第二列，二级和三级权限-->
                                 <el-col :span="19">
+                                    <el-row :class = "[i2==0? '':'top']"  v-for="(role2Item,i2) in roleItem.children" :key="role2Item.id">
+                                        <!--                                第一列，二级权限-->
+                                        <el-col :span="6">
+                                            <el-tag class="role-tag" type="success" closable @close="removeRightById(slope.row,role2Item.id)">{{role2Item.authName}}</el-tag>
+                                            <i class="el-icon-caret-right"></i>
+                                        </el-col>
 
+                                        <el-col :span="18">
+                                            <el-tag class="role-tag" type="warning" closable v-for="(role3Item,i3) in role2Item.children" :key="role3Item.id" @close="removeRightById(slope.row,role3Item.id)">{{role3Item.authName}}</el-tag>
+                                        </el-col>
+                                    </el-row>
                                 </el-col>
                             </el-row>
                         </el-card>
@@ -215,6 +226,27 @@
       },
       closeAddRoleDialog () {
         this.$refs.addRoleForm.resetFields()
+      },
+      removeRightById(role, rightId){
+        this.$confirm('此操作将永久删除该权限, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+            this.$http.delete(`/api/roles/${role.id}/rights/${rightId}`)
+              .then(res=>{
+                if (res.data.meta.status !== 200) {
+                  return this.$message.error('删除权限失败')
+                }
+                role.children = res.data.data
+                this.$message.success('删除权限成功')
+              })
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消删除'
+          });
+        });
       }
     }
   }
@@ -230,5 +262,9 @@
     }
     .top{
         border-top: 1px solid #eeeeee;
+    }
+    .el-row{
+        display: flex;
+        align-items: center;
     }
 </style>
