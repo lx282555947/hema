@@ -22,23 +22,33 @@
                 <el-table-column type="expand">
                     <template slot-scope="slope">
                         <el-card>
-                            <el-row :class = "['bottom',index==0? 'top':'']"  v-for="(roleItem,index) in slope.row.children" :key="roleItem.id">
-<!--                                第一列，一级权限-->
+                            <el-row :class="['bottom',index==0? 'top':'']"
+                                    v-for="(roleItem,index) in slope.row.children" :key="roleItem.id">
+                                <!--                                第一列，一级权限-->
                                 <el-col :span="5">
-                                    <el-tag class="role-tag" closable @close="removeRightById(slope.row,roleItem.id)">{{roleItem.authName}}</el-tag>
+                                    <el-tag class="role-tag" closable @close="removeRightById(slope.row,roleItem.id)">
+                                        {{roleItem.authName}}
+                                    </el-tag>
                                     <i class="el-icon-caret-right"></i>
                                 </el-col>
-<!--                                第二列，二级和三级权限-->
+                                <!--                                第二列，二级和三级权限-->
                                 <el-col :span="19">
-                                    <el-row :class = "[i2==0? '':'top']"  v-for="(role2Item,i2) in roleItem.children" :key="role2Item.id">
+                                    <el-row :class="[i2==0? '':'top']" v-for="(role2Item,i2) in roleItem.children"
+                                            :key="role2Item.id">
                                         <!--                                第一列，二级权限-->
                                         <el-col :span="6">
-                                            <el-tag class="role-tag" type="success" closable @close="removeRightById(slope.row,role2Item.id)">{{role2Item.authName}}</el-tag>
+                                            <el-tag class="role-tag" type="success" closable
+                                                    @close="removeRightById(slope.row,role2Item.id)">
+                                                {{role2Item.authName}}
+                                            </el-tag>
                                             <i class="el-icon-caret-right"></i>
                                         </el-col>
-
                                         <el-col :span="18">
-                                            <el-tag class="role-tag" type="warning" closable v-for="(role3Item,i3) in role2Item.children" :key="role3Item.id" @close="removeRightById(slope.row,role3Item.id)">{{role3Item.authName}}</el-tag>
+                                            <el-tag class="role-tag" type="warning" closable
+                                                    v-for="(role3Item,i3) in role2Item.children" :key="role3Item.id"
+                                                    @close="removeRightById(slope.row,role3Item.id)">
+                                                {{role3Item.authName}}
+                                            </el-tag>
                                         </el-col>
                                     </el-row>
                                 </el-col>
@@ -64,7 +74,8 @@
                             删除
                         </el-button>
                         <!--                        <el-tooltip effect="dark" content="分配角色" placement="top" :enterable="false">-->
-                        <el-button type="warning" icon="el-icon-setting" size="mini">分配权限</el-button>
+                        <el-button type="warning" icon="el-icon-setting" size="mini" @click="assignPermissions(slope.row)">分配权限
+                        </el-button>
                         <!--                        </el-tooltip>-->
                     </template>
                 </el-table-column>
@@ -108,6 +119,13 @@
                 <el-button type="primary" @click="updateRole">确 定</el-button>
             </span>
             </el-dialog>
+            <el-dialog title="分配权限" :visible.sync="assignPermissionsDialog" width="50%">
+                <el-tree :data="rights" :props="rightProps" show-checkbox node-key="id" default-expand-all :default-checked-keys="defaultRights"></el-tree>
+                <span slot="footer" class="dialog-footer">
+                <el-button @click="assignPermissionsDialog = false">取 消</el-button>
+                <el-button type="primary" @click="assignPermissionsDialog = false">确 定</el-button>
+            </span>
+            </el-dialog>
         </el-card>
     </div>
 </template>
@@ -118,8 +136,11 @@
     data () {
       return {
         roles: [],
+        rights: [],
         addRoleDialog: false,
         updateRoleDialog: false,
+        assignPermissionsDialog: false,
+        defaultRights:[],
         addRoleForm: {
           roleId: '',
           roleName: '',
@@ -146,6 +167,10 @@
               trigger: 'blur'
             }
           ]
+        },
+        rightProps: {
+          children: 'children',
+          label: 'authName'
         }
       }
     },
@@ -207,14 +232,14 @@
             })
         })
       },
-      deleteRole(id){
+      deleteRole (id) {
         this.$confirm('此操作将永久删除角色, 是否继续?', '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning'
         }).then(() => {
           return this.$http.delete(`/api/roles/${id}`)
-        }).then(res=>{
+        }).then(res => {
           if (res.data.meta.status !== 200) {
             return this.$message.error('删除失败')
           }
@@ -222,31 +247,54 @@
           this.getRoleList()
         }).catch(() => {
           // this.$message.error('删除失败')
-        });
+        })
       },
       closeAddRoleDialog () {
         this.$refs.addRoleForm.resetFields()
       },
-      removeRightById(role, rightId){
+      removeRightById (role, rightId) {
         this.$confirm('此操作将永久删除该权限, 是否继续?', '提示', {
           confirmButtonText: '确定',
           cancelButtonText: '取消',
           type: 'warning'
         }).then(() => {
-            this.$http.delete(`/api/roles/${role.id}/rights/${rightId}`)
-              .then(res=>{
-                if (res.data.meta.status !== 200) {
-                  return this.$message.error('删除权限失败')
-                }
-                role.children = res.data.data
-                this.$message.success('删除权限成功')
-              })
+          this.$http.delete(`/api/roles/${role.id}/rights/${rightId}`)
+            .then(res => {
+              if (res.data.meta.status !== 200) {
+                return this.$message.error('删除权限失败')
+              }
+              role.children = res.data.data
+              this.$message.success('删除权限成功')
+            })
         }).catch(() => {
           this.$message({
             type: 'info',
             message: '已取消删除'
-          });
-        });
+          })
+        })
+      },
+      assignPermissions (role) {
+        //获取权限
+        this.$http.get('/api/rights/tree')
+          .then(res => {
+            if (res.data.meta.status !== 200) {
+              return this.$message.error('获取权限列表失败')
+            }
+            console.log('权限列表为：', res.data.data)
+            this.rights = res.data.data
+            this.getDefaultRightsByRole(role, this.defaultRights)
+            console.log(this.defaultRights)
+            this.assignPermissionsDialog = true
+          })
+      },
+      getDefaultRightsByRole (role,defArr) {
+        //如果不包含次级权限的时候，则为三级权限，添加至数组
+        if (!role.children) {
+          return defArr.push(role.id)
+        }
+        role.children.forEach(p=>{
+            this.getDefaultRightsByRole(p, defArr)
+        })
       }
     }
   }
@@ -257,13 +305,16 @@
     .role-tag {
         margin: 7px;
     }
+
     .bottom {
         border-bottom: 1px solid #eeeeee;
     }
-    .top{
+
+    .top {
         border-top: 1px solid #eeeeee;
     }
-    .el-row{
+
+    .el-row {
         display: flex;
         align-items: center;
     }
