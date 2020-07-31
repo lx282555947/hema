@@ -282,6 +282,7 @@
             }
             console.log('权限列表为：', res.data.data)
             this.rights = res.data.data
+            this.defaultRights = []
             this.getDefaultRightsByRole(role, this.defaultRights)
             console.log(this.defaultRights)
             this.assignPermissionsDialog = true
